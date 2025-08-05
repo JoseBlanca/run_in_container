@@ -17,25 +17,29 @@ UV_SHARE = ".local/share/uv"
 UV_CACHE = ".cache/uv"
 
 
-def _read_tool_config(pyproject_toml) -> dict:
+def _read_tool_config(pyproject_toml, config):
     with pyproject_toml.open("rb") as f:
         data = tomllib.load(f)
-    return data.get("tool", {}).get(TOOL_NAME, {})
+    toml_config = data.get("tool", {}).get(TOOL_NAME, {})
+    for k, v in toml_config.items():
+        config.setdefault(k, v)
 
 
-def run_in_container(cmd):
+def run_in_container(command, config: None | dict = None):
     project_dir = Path(__name__).parent.absolute()
     pyproject_toml = project_dir / "pyproject.toml"
     if not pyproject_toml.exists():
         raise RuntimeError("pyproject.toml not found: {pyproject_toml}")
 
-    config = _read_tool_config(pyproject_toml)
+    if config is None:
+        config = {}
+    _read_tool_config(pyproject_toml, config)
 
     excluded_project_dirs = list(EXCLUDED_PROJECT_DIRS)
 
     project_mounts = []
 
-    for path_in_host, path_in_container in config["dir_mounts"]:
+    for path_in_host, path_in_container in config.get("dir_mounts", []):
         if not Path(path_in_host).exists():
             raise RuntimeError(f"Path to mount does not exist: {path_in_host}")
         project_mounts.append((Path(path_in_host), Path(path_in_container)))
@@ -69,7 +73,7 @@ def run_in_container(cmd):
         cmd.extend(["-v", f"{local_dir}:{container_dir}"])
     cmd.extend(["-w", str(PROJECT_DIR_IN_CONTAINER)])
     cmd.append(config["container_template_name"])
-    cmd.extend(cmd)
+    cmd.extend(command)
     run(cmd, check=True)
 
 
