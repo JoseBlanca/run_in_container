@@ -9,7 +9,7 @@ dependencies = []
 [project.scripts]
 run-in-container = "run_in_container.run_in_container:run_in_container"
 uvc = "run_in_container.uvc:main"
-testc = "run_in_container.testc"
+testc = "run_in_container.testc:main"
 
 [tool.run_in_container]
 container_template_name = "split_genome"
