@@ -1,6 +1,6 @@
 [project]
 name = "run-in-container"
-version = "0.1.0"
+version = "0.1.1"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -14,8 +14,6 @@ testc = "run_in_container.testc:main"
 [tool.run_in_container]
 container_template_name = "split_genome"
 #dir_mounts = [["/some/dir/", "/path/in/container"]]
-#share_uv_cache = true
-#container_venv_in_host = ".venv_container"
 
 [build-system]
 requires = ["uv_build"]

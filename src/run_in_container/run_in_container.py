@@ -13,8 +13,6 @@ EXCLUDED_PROJECT_DIRS = (
     "container",
 )
 ROOT_HOME_DIR_IN_CONTAINER = Path("/root/")
-UV_SHARE = ".local/share/uv"
-UV_CACHE = ".cache/uv"
 
 
 def _read_tool_config(pyproject_toml, config):
@@ -44,22 +42,25 @@ def run_in_container(command, config: None | dict = None):
             raise RuntimeError(f"Path to mount does not exist: {path_in_host}")
         project_mounts.append((Path(path_in_host), Path(path_in_container)))
 
-    home_dir = Path.home().absolute()
+    if container_uv_dirs := config.get("container_uv_dirs", None):
+        container_uv_dirs = Path(container_uv_dirs)
+        container_uv_dirs.mkdir(exist_ok=True)
+        excluded_project_dirs.append(container_uv_dirs.name)
 
-    if container_venv_in_host := config.get("container_venv_in_host", None):
-        container_venv_in_host = Path(container_venv_in_host)
+        container_venv_in_host = container_uv_dirs / "venv"
         container_venv_in_host.mkdir(exist_ok=True)
         project_mounts.append(
             (container_venv_in_host, PROJECT_DIR_IN_CONTAINER / ".venv")
         )
-        excluded_project_dirs.append(container_venv_in_host.name)
-    if config.get("share_uv_cache", False):
+
+        uv_share = container_uv_dirs / "uv_share"
+        uv_share.mkdir(exist_ok=True)
         project_mounts.append(
-            (home_dir / UV_SHARE, ROOT_HOME_DIR_IN_CONTAINER / UV_SHARE)
+            (uv_share, ROOT_HOME_DIR_IN_CONTAINER / ".local/share/uv")
         )
-        project_mounts.append(
-            (home_dir / UV_CACHE, ROOT_HOME_DIR_IN_CONTAINER / UV_CACHE)
-        )
+        uv_cache = container_uv_dirs / "uv_cache"
+        uv_cache.mkdir(exist_ok=True)
+        project_mounts.append((uv_cache, ROOT_HOME_DIR_IN_CONTAINER / ".cache/uv"))
 
     for path in project_dir.iterdir():
         if path.name in excluded_project_dirs:
